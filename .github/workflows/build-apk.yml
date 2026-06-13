@@ -2,7 +2,7 @@ name: Build Debug APK
 
 on:
   push:
-    branches: [ main ] # 或者你的默认分支名
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -11,19 +11,27 @@ jobs:
 
     steps:
       # 1. 拉取代码
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      # 2. 这一步非常重要！因为你的项目原本没有 gradle 文件夹，我们需要用官方脚本自动下载它
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2
-
-      # 3. 运行构建命令
-      - name: Build APK
-        run: ./gradlew assembleDebug
-
-      # 4. 把生成的 APK 上传出来，让你能下载
-      - name: Upload APK
-        uses: actions/upload-artifact@v3
+      # 2. 安装 JDK 17（Android 编译必须）
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
         with:
-          name: app-debug-apk
+          distribution: temurin
+          java-version: "17"
+
+      # 3. 给 gradlew 执行权限（Linux 系统必须）
+      - name: Ensure gradlew exec
+        run: chmod +x ./gradlew
+
+      # 4. 开始编译 APK
+      - name: Build debug APK
+        run: ./gradlew assembleDebug --no-daemon
+
+      # 5. 上传成品（这里从 v3 改成了 v4 ✅）
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nb21-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
