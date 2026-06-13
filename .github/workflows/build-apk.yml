@@ -2,32 +2,28 @@ name: Build Debug APK
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main ] # 或者你的默认分支名
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      # 1. 拉取代码
+      - uses: actions/checkout@v3
 
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: java-version: '17'
+      # 2. 这一步非常重要！因为你的项目原本没有 gradle 文件夹，我们需要用官方脚本自动下载它
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
 
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
-
-      - name: Build debug APK
+      # 3. 运行构建命令
+      - name: Build APK
         run: ./gradlew assembleDebug
 
-      - name: Upload APK to Release
-        uses: softprops/action-gh-release@v2
+      # 4. 把生成的 APK 上传出来，让你能下载
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
         with:
-          tag_name: autobuild-${{ github.run_number }}
-          name: AutoBuild ${{ github.run_number }}
-          files: |
-            app/build/outputs/apk/debug/app-debug.apk
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: app-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
